@@ -2,7 +2,7 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 
-public class BBoard {
+public class Board {
     public static void main(String[] args) throws IOException {
 
         int port = Integer.parseInt(args[0]);

@@ -1,4 +1,4 @@
-class Note {
+public class Note {
     private final int x, y;
     private final String colour;
     private final String message;

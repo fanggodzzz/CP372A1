@@ -1,4 +1,5 @@
 import java.util.*;
+import Note
 
 public class Board {
     private final int bWid, bHei, nWid, nHei;
@@ -32,9 +33,11 @@ public class Board {
         }
 
         // Overlap check
-        ans = True;
-        for (Note a : notes) {
-            if (a.x == x && )
+        ans = false;
+        for (Note a: notes) {
+            if(a.x == x && a.y == y) {
+                ans = true;
+            }
         }
 
 
