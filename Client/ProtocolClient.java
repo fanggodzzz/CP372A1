@@ -1,72 +1,75 @@
-import java.io.*;
+// ProtocolClient.java
+// To handles talking to the server using TCP sockets
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.IOException;
 import java.net.Socket;
 
 public class ProtocolClient {
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
-
+    // Check if the client is connected
     public boolean isConnected() {
-        return socket != null && socket.isConnected() && !socket.isClosed();
+        if (socket == null) return false;
+        if (socket.isClosed()) return false;
+        return true;
     }
-
+    // Connect to the server
     public void connect(String host, int port) throws IOException {
         socket = new Socket(host, port);
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+        in = new BufferedReader(
+                new InputStreamReader(socket.getInputStream())
+        );
+        out = new PrintWriter(
+                socket.getOutputStream(), true
+        );
     }
-
+    // Send command to the server
     public void sendLine(String line) {
-        if (!isConnected()) throw new IllegalStateException("Not connected.");
-        out.println(line); // adds \n
-        out.flush();
+        if (!isConnected()) {
+            throw new IllegalStateException("Not connected");
+        }
+        out.println(line);
     }
-
-    /**
-     * Reads exactly ONE server response.
-     * Supports:
-     *  - OK <text>
-     *  - OK <number> followed by <number> data lines (GET results)
-     *  - ERROR <code> <message>
-     */
+    // Read response from the server
     public String readResponse() throws IOException {
-        if (!isConnected()) throw new IllegalStateException("Not connected.");
-
-        String first = in.readLine();
-        if (first == null) throw new IOException("Server closed connection.");
-
-        if (first.startsWith("OK ")) {
-            String rest = first.substring(3).trim();
+        String firstLine = in.readLine();
+        if (firstLine == null) {
+            throw new IOException("Server closed connection");
+        }
+        // If response starts with OK
+        if (firstLine.startsWith("OK ")) {
+            String rest = firstLine.substring(3);
+            // To read number after OK
             try {
-                int n = Integer.parseInt(rest);
-                StringBuilder sb = new StringBuilder();
-                sb.append(first).append("\n");
-                for (int i = 0; i < n; i++) {
-                    String line = in.readLine();
-                    if (line == null) throw new IOException("Server closed during multi-line response.");
-                    sb.append(line).append("\n");
+                int count = Integer.parseInt(rest.trim());
+                String result = firstLine + "\n";
+                for (int i = 0; i < count; i++) {
+                    result = result + in.readLine() + "\n";
                 }
-                return sb.toString();
-            } catch (NumberFormatException ignored) {
-                return first + "\n";
+                return result;
+            } catch (NumberFormatException e) {
+                // OK but no number
+                return firstLine + "\n";
             }
         }
-
-        return first + "\n";
+        // ERROR response
+        return firstLine + "\n";
     }
-
-    public void disconnectGracefully() throws IOException {
+    // Disconnect
+    public void disconnect() throws IOException {
         if (isConnected()) {
-            sendLine("DISCONNECT");
-            try { readResponse(); } catch (Exception ignored) {}
-            close();
+            out.println("DISCONNECT");
+            try {
+                readResponse();
+            } catch (Exception e) {
+                // ignore
+            }
+            socket.close();
         }
     }
-
-    public void close() throws IOException {
-        if (out != null) out.close();
-        if (in != null) in.close();
-        if (socket != null) socket.close();
-        out = null; in = null; socket = null;
-    }
 }
+
