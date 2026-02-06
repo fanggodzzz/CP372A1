@@ -1,4 +1,128 @@
+package Server;
+
+import BulletinBoard.Board;
 
 public class BBoardProtocol {
+
+    // false: Not sending connection accepted; 
+    // true: Starting to receive requests and response back
+    private Board board;
+    private boolean state = false; 
+    private final String FORMAT_ERROR = "ERROR INVALID_FORMAT";
     
+    public BBoardProtocol(Board board) {
+        this.board = board;
+    }
+
+    public String processInput(String clientInput) {
+        String response = null;
+
+        if (! state) {
+            response = "OK CONNECTION_ACCEPTED";
+        }
+        else {
+            if (clientInput.startsWith("POST")) {
+                String[] parts = clientInput.trim().split("\\s+");
+
+                try {
+                    if (parts.length != 4) {
+                        throw new Exception("wrong format");
+                    }
+
+                    int x = Integer.parseInt(parts[1]);
+                    int y = Integer.parseInt(parts[2]);
+                    String colour = parts[3];
+                    String message = parts[4];
+
+                    response = board.post(x, y, colour, message);
+
+                } catch (Exception e) {
+                    response = FORMAT_ERROR;
+                }
+
+            }
+            else if (clientInput.startsWith("GET")) {
+                String[] parts = clientInput.trim().split("\\s+");
+
+                try {
+
+                    int x = -1, y = -1;
+                    String colour = null, refer = null;
+
+                    for (int i = 1; i < parts.length; ++ i) {
+                        if (parts[i].startsWith("color=")) {
+                            colour = parts[i].replace("color=", "");
+                        }
+                        else if (parts[i].startsWith("refersTo=")) {
+                            refer = parts[i].replace("refersTo=", "");
+                        }
+                        else if (parts[i].startsWith("color=")) {
+                            try {
+                                x = Integer.parseInt(parts[i].replace("color=", ""));
+                                y = Integer.parseInt(parts[i + 1]);
+                                i = i + 1;
+                            } finally {}
+                        }
+                        else {
+                            throw new Exception("wrong format");
+                        }
+                    }
+                    response = board.get(colour, x, y, refer);
+
+                } catch (Exception e) {
+                    response = FORMAT_ERROR;
+                }
+
+            }
+            else if (clientInput.startsWith("PIN")) {
+                String[] parts = clientInput.trim().split("\\s+");
+
+                try {
+                    if (parts.length != 3) {
+                        throw new Exception("wrong format");
+                    }
+
+                    int x = Integer.parseInt(parts[1]);
+                    int y = Integer.parseInt(parts[2]);
+
+                    response = board.pin(x, y);
+
+                } catch (Exception e) {
+                    response = FORMAT_ERROR;
+                }
+
+            }
+            else if (clientInput.startsWith("UNPIN")) {
+                String[] parts = clientInput.trim().split("\\s+");
+
+                try {
+                    if (parts.length != 3) {
+                        throw new Exception("wrong format");
+                    }
+
+                    int x = Integer.parseInt(parts[1]);
+                    int y = Integer.parseInt(parts[2]);
+
+                    response = board.unpin(x, y);
+
+                } catch (Exception e) {
+                    response = FORMAT_ERROR;
+                }
+
+            }
+            else if (clientInput.startsWith("SHAKE")) {
+                response = board.shake();
+            }
+            else if (clientInput.startsWith("CLEAR")) {
+                response = board.clear();
+            }
+            else if (clientInput.startsWith("DISCONNECT")) {
+                response = "CONNECTION_CLOSED";
+            }
+            else {
+                response = FORMAT_ERROR;
+            }
+        }
+        return response;
+    }
 }

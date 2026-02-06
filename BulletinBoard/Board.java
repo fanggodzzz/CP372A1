@@ -2,6 +2,7 @@ package BulletinBoard;
 import java.util.*;
 
 public class Board {
+    private final Object lock = new Object();
     private final int bWid, bHei, nWid, nHei;
     private final String[] colours;
     private final List<Note> notes = new ArrayList<>();
@@ -15,7 +16,8 @@ public class Board {
         this.colours = colours;
     }
 
-    public synchronized String post(int x, int y, String colour, String message)  {
+    public String post(int x, int y, String colour, String message)  {
+    synchronized(lock) {
         Note note = new Note(x, y, colour, message, false);
 
         // In bound check
@@ -58,20 +60,25 @@ public class Board {
         notes.add(note);
         return "OK NOTE_POSTED";
     }
+    }
 
-    public List<Note> get(String colour, int x, int y, String refer) {
-        List<Note> ans = new ArrayList<>();
+    public String get(String colour, int x, int y, String refer) {
+    synchronized(lock) {
+        List<Note> ansList = new ArrayList<>();
+        String ans = null;
         for (Note note: notes) {
             if ((colour == null || note.getColour() == colour) 
                     && ((x == -1 && y == -1) || (note.contains(new Pin(x, y), nWid, nHei))) 
                     && (refer == null || note.getMes().contains(refer))) {
-                ans.add(note);
+                ansList.add(note);
             }
         }
         return ans;
     }
+    }
     
     public String pin(int x, int y) {
+    synchronized(lock) {
         boolean legit = true;
         Pin pin = new Pin(x, y);
         if (! pins.contains(pin)) {
@@ -92,6 +99,7 @@ public class Board {
         }
         return "OK PIN_ADDED";
     }
+    }
 
     private void resetPinnedStatus() {
         for (Note note: notes) {
@@ -106,6 +114,7 @@ public class Board {
     }
 
     public String unpin(int x, int y) {
+    synchronized(lock) {
         int pos = -1;
         for (int i = 0; i < pins.size(); ++ i) {
             if (pins.get(i).getX() == x && pins.get(i).getY() == y) {
@@ -122,15 +131,20 @@ public class Board {
         resetPinnedStatus();
         return "OK UNPIN_COMPLETE";
     }
+    }
 
     public String shake() {
+    synchronized(lock) {
         notes.removeIf(note -> !note.getPinned());
         return "OK SHAKE_COMPLETE";
     }
+    }
 
     public String clear() {
+    synchronized(lock) {
         notes.clear();
         pins.clear();
         return "OK CLEAR_COMPLETE";
+    }
     }
 }

@@ -10,10 +10,6 @@ public class BBoardServer {
     private static final int DEFAULT_PORT = 12345;
 
     public static void main(String[] args) {
-        ServerSocket serverSocket = null;
-        Socket clientSocket = null;
-        PrintWriter out = null;
-        BufferedReader in = null;
 
         // Parse command-line arguments for port
         int port = DEFAULT_PORT;
@@ -52,12 +48,54 @@ public class BBoardServer {
         // Creat new board
         Board board = new Board(bWid, bHei, nWid, nHei, colours);
 
-        // ServerSocket serverSocket = new ServerSocket(port);
-        // System.out.println("Server running on port " + port);
+        ServerSocket serverSocket = null;
 
-        // while (true) {
-        //     Socket client = serverSocket.accept();
-        //     new Thread(new ClientHandler(client, board)).start();
-        // }
+        try {
+            // Step 1: Create a ServerSocket to listen for incoming connections
+            serverSocket = new ServerSocket(port);
+            System.out.println("Server started on port " + port + ". Waiting for client connections...");
+
+            // Step 2: Accept a client connection (blocks until a client connects) 
+            // and create one thread for each client
+
+            int clientNum = 0;
+            while (true) {
+                Socket clientSocket = null;
+                try {
+                    clientSocket = serverSocket.accept(); // blocks
+                    ClientHandler handler = new ClientHandler(clientSocket, board, ++ clientNum);
+                    new Thread(handler).start(); // new thread per client
+                    
+                } catch (IOException e) {
+                    // Handle I/O exceptions for new client 
+                    System.err.println("New client " + (clientNum + 1) + " - Server error: " + e.getMessage());
+                    e.printStackTrace();
+                    
+                } finally {
+                    // Always close resources to prevent memory leaks
+                    try {
+                        if (clientSocket != null) clientSocket.close();
+                        System.out.println("New client " + (clientNum + 1) +" - Connection closed");
+                    } catch (IOException e) {
+                        System.err.println("New client " + (clientNum + 1) +" - Error closing resources: " + e.getMessage());
+                    }
+                }
+        }
+
+        } catch (IOException e) {
+            // Handle I/O exceptions (connection refused, socket creation failed, etc.)
+            System.err.println("Server error: " + e.getMessage());
+            e.printStackTrace();
+
+        } finally {
+            // Step 3: Always close resources to prevent memory leaks
+            // Close in the reverse order they were opened
+            try {
+                if (serverSocket != null) serverSocket.close();
+                System.out.println("Server closed.");
+            } catch (IOException e) {
+                System.err.println("Error closing resources: " + e.getMessage());
+            }
+        }
     }
 }
