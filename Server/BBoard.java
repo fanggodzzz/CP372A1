@@ -15,11 +15,6 @@ public class Board {
         for (int i = 5; i < args.length; ++ i) {
             colours[i - 5] = args[i];
         }
-
-        System.out.println("Paramenters:" + port + " " + bWid + " " + bHei + " " + nWid + " " + nHei);
-        for (String a : colours) {
-            System.out.println(a);
-        }
     
         Board board = new Board(bWid, bHei, nWid, nHei, colours);
 
