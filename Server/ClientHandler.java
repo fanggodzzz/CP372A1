@@ -37,7 +37,7 @@ public class ClientHandler implements Runnable {
             while ((clientInput = in.readLine()) != null) {
                 System.out.println("Client: " + clientInput);
                 
-                serverResponse = protocol.processInput(clientInput);
+                serverResponse = protocol.processInput(clientInput.trim());
                 out.println(serverResponse);
                 System.out.println("Server: " + serverResponse);
 

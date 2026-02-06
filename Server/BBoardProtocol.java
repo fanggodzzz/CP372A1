@@ -19,20 +19,24 @@ public class BBoardProtocol {
 
         if (! state) {
             response = "OK CONNECTION_ACCEPTED";
+            state = true;
         }
         else {
             if (clientInput.startsWith("POST")) {
                 String[] parts = clientInput.trim().split("\\s+");
 
                 try {
-                    if (parts.length != 4) {
+                    if (parts.length < 3) {
                         throw new Exception("wrong format");
                     }
 
                     int x = Integer.parseInt(parts[1]);
                     int y = Integer.parseInt(parts[2]);
                     String colour = parts[3];
-                    String message = parts[4];
+                    String message = "";
+                    for (int i = 4; i < parts.length; ++ i) {
+                        message += parts[i] + ' ';
+                    }
 
                     response = board.post(x, y, colour, message);
 

@@ -60,27 +60,11 @@ public class BBoardServer {
 
             int clientNum = 0;
             while (true) {
-                Socket clientSocket = null;
-                try {
-                    clientSocket = serverSocket.accept(); // blocks
-                    ClientHandler handler = new ClientHandler(clientSocket, board, ++ clientNum);
-                    new Thread(handler).start(); // new thread per client
-                    
-                } catch (IOException e) {
-                    // Handle I/O exceptions for new client 
-                    System.err.println("New client " + (clientNum + 1) + " - Server error: " + e.getMessage());
-                    e.printStackTrace();
-                    
-                } finally {
-                    // Always close resources to prevent memory leaks
-                    try {
-                        if (clientSocket != null) clientSocket.close();
-                        System.out.println("New client " + (clientNum + 1) +" - Connection closed");
-                    } catch (IOException e) {
-                        System.err.println("New client " + (clientNum + 1) +" - Error closing resources: " + e.getMessage());
-                    }
-                }
-        }
+                Socket clientSocket = serverSocket.accept();
+                ClientHandler handler =
+                    new ClientHandler(clientSocket, board, ++ clientNum);
+                new Thread(handler).start();
+            }
 
         } catch (IOException e) {
             // Handle I/O exceptions (connection refused, socket creation failed, etc.)
