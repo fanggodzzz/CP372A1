@@ -1,216 +1,141 @@
+// ClientGUI.java
+// Builds GUI and handles button clicks
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 
 public class ClientGUI extends JFrame {
-    private final JTextField ipField = new JTextField("127.0.0.1");
-    private final JTextField portField = new JTextField("4554");
-    private final JButton connectBtn = new JButton("Connect");
-    private final JButton disconnectBtn = new JButton("Disconnect");
 
-    private final JTextField commandField = new JTextField();
-    private final JButton sendBtn = new JButton("Send Command");
+    private JTextField ipField;
+    private JTextField portField;
+    private JTextField commandField;
 
-    private final JButton postBtn = new JButton("POST...");
-    private final JButton getBtn = new JButton("GET...");
-    private final JButton pinBtn = new JButton("PIN...");
-    private final JButton unpinBtn = new JButton("UNPIN...");
-    private final JButton shakeBtn = new JButton("SHAKE");
-    private final JButton clearBtn = new JButton("CLEAR");
+    private JButton connectButton;
+    private JButton disconnectButton;
+    private JButton sendButton;
 
-    private final JTextArea output = new JTextArea();
+    private JButton postButton;
+    private JButton getButton;
+    private JButton pinButton;
+    private JButton unpinButton;
+    private JButton shakeButton;
+    private JButton clearButton;
 
-    private final ProtocolClient client = new ProtocolClient();
+    private JTextArea outputArea;
+
+    private ProtocolClient client;
 
     public ClientGUI() {
-        super("CP372 A1 Client");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        client = new ProtocolClient();
+
+        setTitle("CP372 A1 Client");
         setSize(900, 600);
-        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        output.setEditable(false);
-        output.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        // Top panel 
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new GridLayout(2, 1));
 
-        JPanel top = new JPanel(new GridLayout(2, 1));
-        top.add(buildConnectionPanel());
-        top.add(buildCommandPanel());
+        JPanel connectPanel = new JPanel();
+        connectPanel.add(new JLabel("Server IP:"));
+        ipField = new JTextField("127.0.0.1", 10);
+        connectPanel.add(ipField);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        actions.add(postBtn);
-        actions.add(getBtn);
-        actions.add(pinBtn);
-        actions.add(unpinBtn);
-        actions.add(shakeBtn);
-        actions.add(clearBtn);
+        connectPanel.add(new JLabel("Port:"));
+        portField = new JTextField("4554", 5);
+        connectPanel.add(portField);
 
-        add(top, BorderLayout.NORTH);
-        add(actions, BorderLayout.CENTER);
-        add(new JScrollPane(output), BorderLayout.SOUTH);
+        connectButton = new JButton("Connect");
+        disconnectButton = new JButton("Disconnect");
+        connectPanel.add(connectButton);
+        connectPanel.add(disconnectButton);
 
-        // Make output area taller
-        ((JScrollPane)getContentPane().getComponent(2)).setPreferredSize(new Dimension(900, 420));
+        topPanel.add(connectPanel);
 
-        wireEvents();
-        setButtonsConnected(false);
+        JPanel commandPanel = new JPanel();
+        commandPanel.setLayout(new BorderLayout());
+        commandPanel.add(new JLabel("Raw Command:"), BorderLayout.WEST);
+        commandField = new JTextField();
+        commandPanel.add(commandField, BorderLayout.CENTER);
+        sendButton = new JButton("Send Command");
+        commandPanel.add(sendButton, BorderLayout.EAST);
+
+        topPanel.add(commandPanel);
+
+        add(topPanel, BorderLayout.NORTH);
+
+        // Buttons panel
+        JPanel buttonPanel = new JPanel();
+
+        postButton = new JButton("POST");
+        getButton = new JButton("GET");
+        pinButton = new JButton("PIN");
+        unpinButton = new JButton("UNPIN");
+        shakeButton = new JButton("SHAKE");
+        clearButton = new JButton("CLEAR");
+
+        buttonPanel.add(postButton);
+        buttonPanel.add(getButton);
+        buttonPanel.add(pinButton);
+        buttonPanel.add(unpinButton);
+        buttonPanel.add(shakeButton);
+        buttonPanel.add(clearButton);
+
+        add(buttonPanel, BorderLayout.CENTER);
+
+        // Output area
+        outputArea = new JTextArea();
+        outputArea.setEditable(false);
+        add(new JScrollPane(outputArea), BorderLayout.SOUTH);
+
+        // Button actions 
+        connectButton.addActionListener(e -> connect());
+        disconnectButton.addActionListener(e -> disconnect());
+        sendButton.addActionListener(e -> sendCommand());
+
+        postButton.addActionListener(e -> sendCommand("POST 10 10 white Hello"));
+        getButton.addActionListener(e -> sendCommand("GET"));
+        pinButton.addActionListener(e -> sendCommand("PIN 15 12"));
+        unpinButton.addActionListener(e -> sendCommand("UNPIN 15 12"));
+        shakeButton.addActionListener(e -> sendCommand("SHAKE"));
+        clearButton.addActionListener(e -> sendCommand("CLEAR"));
     }
 
-    private JPanel buildConnectionPanel() {
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        p.add(new JLabel("Server IP:"));
-        ipField.setColumns(12);
-        p.add(ipField);
-
-        p.add(new JLabel("Port:"));
-        portField.setColumns(6);
-        p.add(portField);
-
-        p.add(connectBtn);
-        p.add(disconnectBtn);
-        return p;
-    }
-
-    private JPanel buildCommandPanel() {
-        JPanel p = new JPanel(new BorderLayout(8, 0));
-        p.add(new JLabel("Raw Command:"), BorderLayout.WEST);
-        p.add(commandField, BorderLayout.CENTER);
-        p.add(sendBtn, BorderLayout.EAST);
-        return p;
-    }
-
-    private void wireEvents() {
-        connectBtn.addActionListener(e -> onConnect());
-        disconnectBtn.addActionListener(e -> onDisconnect());
-
-        sendBtn.addActionListener(e -> {
-            String cmd = commandField.getText().trim();
-            if (cmd.isEmpty()) return;
-            sendAndShow(cmd);
-        });
-
-        postBtn.addActionListener(e -> onPostDialog());
-        getBtn.addActionListener(e -> onGetDialog());
-        pinBtn.addActionListener(e -> onPinDialog());
-        unpinBtn.addActionListener(e -> onUnpinDialog());
-        shakeBtn.addActionListener(e -> sendAndShow("SHAKE"));
-        clearBtn.addActionListener(e -> sendAndShow("CLEAR"));
-    }
-
-    private void onConnect() {
-        String host = ipField.getText().trim();
-        int port;
+    private void connect() {
         try {
-            port = Integer.parseInt(portField.getText().trim());
-        } catch (NumberFormatException ex) {
-            append("ERROR: Port must be an integer.\n");
-            return;
+            String ip = ipField.getText();
+            int port = Integer.parseInt(portField.getText());
+            client.connect(ip, port);
+            outputArea.append("Connected to server\n");
+        } catch (Exception e) {
+            outputArea.append("ERROR: " + e.getMessage() + "\n");
         }
+    }
 
+    private void disconnect() {
         try {
-            client.connect(host, port);
-            append("Connected to " + host + ":" + port + "\n");
-            setButtonsConnected(true);
-        } catch (IOException ex) {
-            append("ERROR: Could not connect: " + ex.getMessage() + "\n");
-            setButtonsConnected(false);
+            client.disconnect();
+            outputArea.append("Disconnected\n");
+        } catch (IOException e) {
+            outputArea.append("ERROR disconnecting\n");
         }
     }
 
-    private void onDisconnect() {
+    private void sendCommand() {
+        String cmd = commandField.getText();
+        sendCommand(cmd);
+    }
+
+    private void sendCommand(String cmd) {
         try {
-            if (client.isConnected()) {
-                append("> DISCONNECT\n");
-                client.disconnectGracefully();
-                append("(Disconnected)\n");
-            }
-        } catch (IOException ex) {
-            append("ERROR while disconnecting: " + ex.getMessage() + "\n");
-        } finally {
-            setButtonsConnected(false);
+            outputArea.append("> " + cmd + "\n");
+            client.sendLine(cmd);
+            String response = client.readResponse();
+            outputArea.append(response);
+        } catch (Exception e) {
+            outputArea.append("ERROR: " + e.getMessage() + "\n");
         }
-    }
-
-    private void onPostDialog() {
-        String x = JOptionPane.showInputDialog(this, "POST x:", "10");
-        if (x == null) return;
-        String y = JOptionPane.showInputDialog(this, "POST y:", "10");
-        if (y == null) return;
-        String color = JOptionPane.showInputDialog(this, "Color (must be allowed by server):", "white");
-        if (color == null) return;
-        String msg = JOptionPane.showInputDialog(this, "Message:", "Hello");
-        if (msg == null) return;
-
-        String cmd = "POST " + x.trim() + " " + y.trim() + " " + color.trim() + " " + msg;
-        sendAndShow(cmd);
-    }
-
-    private void onGetDialog() {
-        String color = JOptionPane.showInputDialog(this, "GET filter: color=<color> (blank = none)", "");
-        if (color == null) return;
-        String contains = JOptionPane.showInputDialog(this, "GET filter: contains=<x> <y> (e.g., 15 12) (blank = none)", "");
-        if (contains == null) return;
-        String refers = JOptionPane.showInputDialog(this, "GET filter: refersTo=<text> (blank = none)", "");
-        if (refers == null) return;
-
-        StringBuilder cmd = new StringBuilder("GET");
-        if (!color.trim().isEmpty()) cmd.append(" color=").append(color.trim());
-        if (!contains.trim().isEmpty()) cmd.append(" contains=").append(contains.trim());
-        if (!refers.trim().isEmpty()) cmd.append(" refersTo=").append(refers.trim());
-
-        sendAndShow(cmd.toString());
-    }
-
-    private void onPinDialog() {
-        String x = JOptionPane.showInputDialog(this, "PIN x:", "15");
-        if (x == null) return;
-        String y = JOptionPane.showInputDialog(this, "PIN y:", "12");
-        if (y == null) return;
-        sendAndShow("PIN " + x.trim() + " " + y.trim());
-    }
-
-    private void onUnpinDialog() {
-        String x = JOptionPane.showInputDialog(this, "UNPIN x:", "15");
-        if (x == null) return;
-        String y = JOptionPane.showInputDialog(this, "UNPIN y:", "12");
-        if (y == null) return;
-        sendAndShow("UNPIN " + x.trim() + " " + y.trim());
-    }
-
-    private void sendAndShow(String cmd) {
-        if (!client.isConnected()) {
-            append("ERROR: Not connected.\n");
-            return;
-        }
-
-        append("> " + cmd + "\n");
-
-        new Thread(() -> {
-            try {
-                client.sendLine(cmd);
-                String resp = client.readResponse();
-                SwingUtilities.invokeLater(() -> append(resp));
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> append("ERROR: " + ex.getMessage() + "\n"));
-            }
-        }).start();
-    }
-
-    private void setButtonsConnected(boolean connected) {
-        connectBtn.setEnabled(!connected);
-        disconnectBtn.setEnabled(connected);
-
-        sendBtn.setEnabled(connected);
-        commandField.setEnabled(connected);
-
-        postBtn.setEnabled(connected);
-        getBtn.setEnabled(connected);
-        pinBtn.setEnabled(connected);
-        unpinBtn.setEnabled(connected);
-        shakeBtn.setEnabled(connected);
-        clearBtn.setEnabled(connected);
-    }
-
-    private void append(String text) {
-        output.append(text);
-        output.setCaretPosition(output.getDocument().getLength());
     }
 }
