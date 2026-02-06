@@ -1,4 +1,4 @@
-package CP372A1.BulletinBoard;
+package BulletinBoard;
 
 class Pin {
     private final int x, y;
