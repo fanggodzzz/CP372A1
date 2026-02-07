@@ -36,29 +36,34 @@ public class ProtocolClient {
     }
     // Read response from the server
     public String readResponse() throws IOException {
-        String firstLine = in.readLine();
-        if (firstLine == null) {
-            throw new IOException("Server closed connection");
-        }
-        // If response starts with OK
-        if (firstLine.startsWith("OK ")) {
-            String rest = firstLine.substring(3);
-            // To read number after OK
+    StringBuilder sb = new StringBuilder();
+
+    String firstLine = in.readLine();
+    if (firstLine == null) return "";
+
+    sb.append(firstLine).append("\n");
+
+    // If response starts with "OK <number>", read that many NOTE lines
+    if (firstLine.startsWith("OK ")) {
+        String[] parts = firstLine.split("\\s+");
+        if (parts.length == 2) {
             try {
-                int count = Integer.parseInt(rest.trim());
-                String result = firstLine + "\n";
+                int count = Integer.parseInt(parts[1]);
                 for (int i = 0; i < count; i++) {
-                    result = result + in.readLine() + "\n";
+                    String line = in.readLine();
+                    if (line != null) {
+                        sb.append(line).append("\n");
+                    }
                 }
-                return result;
             } catch (NumberFormatException e) {
-                // OK but no number
-                return firstLine + "\n";
+                // ignore, single-line OK
             }
         }
-        // ERROR response
-        return firstLine + "\n";
     }
+
+    return sb.toString();
+}
+
     // Disconnect
     public void disconnect() throws IOException {
         if (isConnected()) {
