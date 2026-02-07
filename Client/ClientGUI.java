@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClientGUI extends JFrame {
-    private JSplitPane splitPane;
+
     // Connection controls
     private JTextField ipField;
     private JTextField portField;
