@@ -141,7 +141,7 @@ public class ClientGUI extends JFrame {
     public void fixSplit() {
         SwingUtilities.invokeLater(() -> {
             if (splitPane != null) {
-                splitPane.setDividerLocation(0.75); // give board most of the space
+                splitPane.setDividerLocation(400); // pixels (very reliable)
             }
             revalidate();
             repaint();
