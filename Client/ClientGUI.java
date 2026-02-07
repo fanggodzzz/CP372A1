@@ -171,8 +171,11 @@ public class ClientGUI extends JFrame {
 
             // Update board only after GET
             if (cmd.trim().equalsIgnoreCase("GET")) {
-                updateBoardFromGetResponse(response);
+                SwingUtilities.invokeLater(() -> {
+                    updateBoardFromGetResponse(response);
+                });
             }
+
 
         } catch (Exception e) {
             outputArea.append("ERROR: " + e.getMessage() + "\n");
