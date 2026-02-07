@@ -221,6 +221,17 @@ public class ClientGUI extends JFrame {
         sendCommand("UNPIN " + x.trim() + " " + y.trim());
     }
 
+    public void fixSplit() {
+    SwingUtilities.invokeLater(() -> {
+        // force board to be visible
+        for (Component c : getContentPane().getComponents()) {
+            if (c instanceof JSplitPane) {
+                ((JSplitPane) c).setDividerLocation(0.7);
+                }
+            }
+        });
+    }
+
     // ===== Parse GET response and update board =====
     // Your server GET output format:
     // OK N
