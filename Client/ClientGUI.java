@@ -103,17 +103,25 @@ public class ClientGUI extends JFrame {
 
         // ===== Center split: board (top) + output log (bottom) =====
         boardPanel = new BoardPanel();
-        boardPanel.setBoardConfig(200, 100, 20, 10); // match server args: 200 100 20 10
+        boardPanel.setBoardConfig(200, 100, 20, 10);
 
+        // DEBUG border so we can SEE the board panel exists
+        boardPanel.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+
+        // make sure it cannot collapse to zero
+        boardPanel.setMinimumSize(new Dimension(300, 300));
+        
         outputArea = new JTextArea();
         outputArea.setEditable(false);
         outputArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-
+        
         JScrollPane logScroll = new JScrollPane(outputArea);
-
+        logScroll.setMinimumSize(new Dimension(300, 120));
+        
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, boardPanel, logScroll);
-        splitPane.setResizeWeight(0.75);
-
+        splitPane.setResizeWeight(0.80);
+        splitPane.setDividerSize(10);
+        
         add(splitPane, BorderLayout.CENTER);
 
         // ===== Actions =====
