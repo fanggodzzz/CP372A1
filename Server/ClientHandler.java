@@ -35,7 +35,7 @@ public class ClientHandler implements Runnable {
             // Step 4: Read client input and respond until conversation ends
             String clientInput;
             while ((clientInput = in.readLine()) != null) {
-                System.out.println("Client: " + clientInput);
+                System.out.println("Client " + clientNum + ": " + clientInput);
                 
                 serverResponse = protocol.processInput(clientInput.trim());
                 out.println(serverResponse);
@@ -47,10 +47,10 @@ public class ClientHandler implements Runnable {
                 }
             }
 
-            System.out.println("Client " + clientNum + "disconnected. Conversation ended");
+            System.out.println("Client " + clientNum + " disconnected. Conversation ended");
 
         } catch (IOException e) {
-            System.out.println("Client " + clientNum + "disconnected.");
+            System.out.println("Client " + clientNum + " disconnected.");
 
         } finally {
             // Step 5: Always close resources to prevent memory leaks

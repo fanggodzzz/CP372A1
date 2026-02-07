@@ -40,7 +40,7 @@ public class Board {
         // Overlap check
         ans = false;
         for (Note a: notes) {
-            if(a.equals(note)) {
+            if(a.getX() == note.getX() && a.getY() == note.getY()) {
                 ans = true;
                 break;
             }
@@ -67,7 +67,7 @@ public class Board {
         List<Note> ansList = new ArrayList<>();
         String ans = null;
         for (Note note: notes) {
-            if ((colour == null || note.getColour() == colour) 
+            if ((colour == null || note.getColour().equals(colour)) 
                     && ((x == -1 && y == -1) || (note.contains(new Pin(x, y), nWid, nHei))) 
                     && (refer == null || note.getMes().contains(refer))) {
                 ansList.add(note);

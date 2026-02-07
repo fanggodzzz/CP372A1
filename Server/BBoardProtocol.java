@@ -26,7 +26,7 @@ public class BBoardProtocol {
                 String[] parts = clientInput.trim().split("\\s+");
 
                 try {
-                    if (parts.length < 3) {
+                    if (parts.length < 5) {
                         throw new Exception("wrong format");
                     }
 
@@ -59,10 +59,19 @@ public class BBoardProtocol {
                         }
                         else if (parts[i].startsWith("refersTo=")) {
                             refer = parts[i].replace("refersTo=", "");
+                            ++ i;
+                            for(; i < parts.length; ++ i) {
+                                if (parts[i].startsWith("color=") 
+                                        || parts[i].startsWith("contains=")) {
+                                    break;
+                                }
+                                refer += ' ' + parts[i];
+                            }
+                            -- i;
                         }
-                        else if (parts[i].startsWith("color=")) {
+                        else if (parts[i].startsWith("contains=")) {
                             try {
-                                x = Integer.parseInt(parts[i].replace("color=", ""));
+                                x = Integer.parseInt(parts[i].replace("contains=", ""));
                                 y = Integer.parseInt(parts[i + 1]);
                                 i = i + 1;
                             } finally {}
@@ -114,13 +123,13 @@ public class BBoardProtocol {
                 }
 
             }
-            else if (clientInput.startsWith("SHAKE")) {
+            else if (clientInput.trim().equals("SHAKE")) {
                 response = board.shake();
             }
-            else if (clientInput.startsWith("CLEAR")) {
+            else if (clientInput.trim().equals("CLEAR")) {
                 response = board.clear();
             }
-            else if (clientInput.startsWith("DISCONNECT")) {
+            else if (clientInput.trim().equals("DISCONNECT")) {
                 response = "CONNECTION_CLOSED";
             }
             else {
