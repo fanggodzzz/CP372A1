@@ -1,5 +1,5 @@
 // ClientGUI.java
-// GUI with a drawing board + output log (basic Java style)
+// GUI with board drawing + output log (basic Java style)
 
 import javax.swing.*;
 import java.awt.*;
@@ -33,6 +33,9 @@ public class ClientGUI extends JFrame {
     // Board drawing
     private BoardPanel boardPanel;
 
+    // Split pane (so we can force divider)
+    private JSplitPane splitPane;
+
     // Network client
     private ProtocolClient client;
 
@@ -46,8 +49,7 @@ public class ClientGUI extends JFrame {
         setLocationRelativeTo(null);
 
         // ===== Top panel (2 rows) =====
-        JPanel topPanel = new JPanel();
-        topPanel.setLayout(new GridLayout(2, 1));
+        JPanel topPanel = new JPanel(new GridLayout(2, 1));
 
         // Row 1: connection panel
         JPanel connectPanel = new JPanel();
@@ -67,9 +69,7 @@ public class ClientGUI extends JFrame {
         topPanel.add(connectPanel);
 
         // Row 2: raw command panel
-        JPanel commandPanel = new JPanel();
-        commandPanel.setLayout(new BorderLayout());
-
+        JPanel commandPanel = new JPanel(new BorderLayout());
         commandPanel.add(new JLabel("Raw Command:"), BorderLayout.WEST);
 
         commandField = new JTextField();
@@ -103,7 +103,7 @@ public class ClientGUI extends JFrame {
 
         // ===== Center split: board (top) + output log (bottom) =====
         boardPanel = new BoardPanel();
-        boardPanel.setBoardConfig(200, 100, 20, 10); // MUST match your server: 200 100 20 10
+        boardPanel.setBoardConfig(200, 100, 20, 10); // match server args: 200 100 20 10
 
         outputArea = new JTextArea();
         outputArea.setEditable(false);
@@ -111,10 +111,10 @@ public class ClientGUI extends JFrame {
 
         JScrollPane logScroll = new JScrollPane(outputArea);
 
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, boardPanel, logScroll);
-        split.setResizeWeight(0.75); // 75% board, 25% log
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, boardPanel, logScroll);
+        splitPane.setResizeWeight(0.75);
 
-        add(split, BorderLayout.CENTER);
+        add(splitPane, BorderLayout.CENTER);
 
         // ===== Actions =====
         connectButton.addActionListener(e -> connect());
@@ -127,6 +127,17 @@ public class ClientGUI extends JFrame {
         unpinButton.addActionListener(e -> doUnpinDialog());
         shakeButton.addActionListener(e -> sendCommand("SHAKE"));
         clearButton.addActionListener(e -> sendCommand("CLEAR"));
+    }
+
+    // Call AFTER setVisible(true) in ClientMain
+    public void fixSplit() {
+        SwingUtilities.invokeLater(() -> {
+            if (splitPane != null) {
+                splitPane.setDividerLocation(0.75); // give board most of the space
+            }
+            revalidate();
+            repaint();
+        });
     }
 
     // ===== Connection =====
@@ -169,13 +180,10 @@ public class ClientGUI extends JFrame {
             String response = client.readResponse();
             outputArea.append(response);
 
-            // Update board only after GET
+            // Update board only after GET (on Swing thread)
             if (cmd.trim().equalsIgnoreCase("GET")) {
-                SwingUtilities.invokeLater(() -> {
-                    updateBoardFromGetResponse(response);
-                });
+                SwingUtilities.invokeLater(() -> updateBoardFromGetResponse(response));
             }
-
 
         } catch (Exception e) {
             outputArea.append("ERROR: " + e.getMessage() + "\n");
@@ -221,51 +229,32 @@ public class ClientGUI extends JFrame {
         sendCommand("UNPIN " + x.trim() + " " + y.trim());
     }
 
-    public void fixSplit() {
-    SwingUtilities.invokeLater(() -> {
-        // force board to be visible
-        for (Component c : getContentPane().getComponents()) {
-            if (c instanceof JSplitPane) {
-                ((JSplitPane) c).setDividerLocation(0.7);
-                }
-            }
-        });
-    }
-
     // ===== Parse GET response and update board =====
-    // Your server GET output format:
+    // Format:
     // OK N
     // NOTE x y color message  PINNED=false
 
     private void updateBoardFromGetResponse(String resp) {
 
         String[] lines = resp.split("\\r?\\n");
-        List<BoardPanel.NoteDraw> notes = new ArrayList<BoardPanel.NoteDraw>();
+        List<BoardPanel.NoteDraw> notes = new ArrayList<>();
 
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-
-            if (!line.startsWith("NOTE ")) {
-                continue;
-            }
+        for (String raw : lines) {
+            String line = raw.trim();
+            if (!line.startsWith("NOTE ")) continue;
 
             int pinIndex = line.indexOf("PINNED=");
-            if (pinIndex < 0) {
-                continue;
-            }
+            if (pinIndex < 0) continue;
 
-            String left = line.substring(0, pinIndex).trim();     // NOTE x y color msg...
-            String pinPart = line.substring(pinIndex).trim();     // PINNED=true/false
+            String left = line.substring(0, pinIndex).trim();
+            String pinPart = line.substring(pinIndex).trim();
 
-            boolean pinned = pinPart.toLowerCase().indexOf("true") >= 0;
+            boolean pinned = pinPart.toLowerCase().contains("true");
 
             String[] parts = left.split("\\s+");
-            if (parts.length < 5) {
-                continue;
-            }
+            if (parts.length < 5) continue;
 
-            int x;
-            int y;
+            int x, y;
             try {
                 x = Integer.parseInt(parts[1]);
                 y = Integer.parseInt(parts[2]);
@@ -286,5 +275,7 @@ public class ClientGUI extends JFrame {
         }
 
         boardPanel.setNotes(notes);
+        boardPanel.revalidate();
+        boardPanel.repaint();
     }
 }
