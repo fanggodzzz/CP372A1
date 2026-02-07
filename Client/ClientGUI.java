@@ -8,17 +8,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClientGUI extends JFrame {
-
+    private JSplitPane splitPane;
     // Connection controls
     private JTextField ipField;
     private JTextField portField;
     private JButton connectButton;
     private JButton disconnectButton;
-
+    
     // Raw command controls
     private JTextField commandField;
     private JButton sendButton;
-
+    
     // Action buttons
     private JButton postButton;
     private JButton getButton;
