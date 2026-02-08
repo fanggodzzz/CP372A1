@@ -32,6 +32,9 @@ public class ClientGUI extends JFrame {
 
     private ProtocolClient client;
 
+    // Simple connection flag for client-side robustness
+    private boolean connected = false;
+
     public ClientGUI() {
 
         client = new ProtocolClient();
@@ -62,7 +65,7 @@ public class ClientGUI extends JFrame {
 
         topPanel.add(connectPanel);
 
-        // Raw command 
+        // Raw command
         JPanel commandPanel = new JPanel();
         commandPanel.setLayout(new BorderLayout());
         commandPanel.add(new JLabel("Raw Command:"), BorderLayout.WEST);
@@ -106,7 +109,7 @@ public class ClientGUI extends JFrame {
 
         JScrollPane scrollPane = new JScrollPane(outputArea);
         add(scrollPane, BorderLayout.CENTER);
-        
+
         // Buttons
         JPanel buttonPanel = new JPanel();
 
@@ -126,62 +129,133 @@ public class ClientGUI extends JFrame {
 
         add(buttonPanel, BorderLayout.SOUTH);
 
+        // Initial state: not connected
+        setCommandButtonsEnabled(false);
+
         // Button actions
-        
         connectButton.addActionListener(e -> connect());
         disconnectButton.addActionListener(e -> disconnect());
         sendButton.addActionListener(e -> sendCommand());
 
-        // POST using input fields
+        // POST using input fields (validated)
         postButton.addActionListener(e -> {
+            if (!requireConnected()) return;
+
             String x = xField.getText().trim();
             String y = yField.getText().trim();
             String color = colorField.getText().trim();
             String msg = messageField.getText().trim();
+
+            if (!isInt(x) || !isInt(y)) {
+                clientError("POST requires integer X and Y (e.g., 10 10).");
+                return;
+            }
+            if (color.isEmpty()) {
+                clientError("POST requires a color (e.g., white).");
+                return;
+            }
+            if (msg.isEmpty()) {
+                clientError("POST requires a message.");
+                return;
+            }
+
             sendCommand("POST " + x + " " + y + " " + color + " " + msg);
         });
 
-        // GET 
+        // GET (validated)
         getButton.addActionListener(e -> {
-    		StringBuilder cmd = new StringBuilder("GET");
+            if (!requireConnected()) return;
 
-    		if (!colorField.getText().trim().isEmpty()) {
-        		cmd.append(" color=").append(colorField.getText().trim());
-    		}
-
-    		if (!xField.getText().trim().isEmpty() && !yField.getText().trim().isEmpty()) {
-        		cmd.append(" contains=").append(xField.getText().trim()).append(" ").append(yField.getText().trim());
-    		}
-
-    		if (!messageField.getText().trim().isEmpty()) {
-        		cmd.append(" refersTo=").append(messageField.getText().trim());
-    		}
-
-    	sendCommand(cmd.toString());
-		});
-
-        // Dynamic PIN
-        pinButton.addActionListener(e -> {
             String x = xField.getText().trim();
             String y = yField.getText().trim();
+            String color = colorField.getText().trim();
+            String refers = messageField.getText().trim();
+
+            boolean hasX = !x.isEmpty();
+            boolean hasY = !y.isEmpty();
+
+            if (hasX || hasY) {
+                if (!(hasX && hasY)) {
+                    clientError("GET contains= requires BOTH X and Y.");
+                    return;
+                }
+                if (!isInt(x) || !isInt(y)) {
+                    clientError("GET contains= requires integer X and Y.");
+                    return;
+                }
+            }
+
+            StringBuilder cmd = new StringBuilder("GET");
+
+            if (!color.isEmpty()) {
+                cmd.append(" color=").append(color);
+            }
+            if (hasX && hasY) {
+                cmd.append(" contains=").append(x).append(" ").append(y);
+            }
+            if (!refers.isEmpty()) {
+                cmd.append(" refersTo=").append(refers);
+            }
+
+            sendCommand(cmd.toString());
+        });
+
+        // PIN (validated)
+        pinButton.addActionListener(e -> {
+            if (!requireConnected()) return;
+
+            String x = xField.getText().trim();
+            String y = yField.getText().trim();
+
+            if (!isInt(x) || !isInt(y)) {
+                clientError("PIN requires integer X and Y (e.g., 15 12).");
+                return;
+            }
+
             sendCommand("PIN " + x + " " + y);
         });
 
-        // Dynamic UNPIN
+        // UNPIN (validated)
         unpinButton.addActionListener(e -> {
+            if (!requireConnected()) return;
+
             String x = xField.getText().trim();
             String y = yField.getText().trim();
+
+            if (!isInt(x) || !isInt(y)) {
+                clientError("UNPIN requires integer X and Y (e.g., 15 12).");
+                return;
+            }
+
             sendCommand("UNPIN " + x + " " + y);
         });
 
-        shakeButton.addActionListener(e -> sendCommand("SHAKE"));
-        clearButton.addActionListener(e -> sendCommand("CLEAR"));
+        shakeButton.addActionListener(e -> {
+            if (!requireConnected()) return;
+            sendCommand("SHAKE");
+        });
+
+        clearButton.addActionListener(e -> {
+            if (!requireConnected()) return;
+            sendCommand("CLEAR");
+        });
     }
 
     private void connect() {
         try {
             String ip = ipField.getText().trim();
-            int port = Integer.parseInt(portField.getText().trim());
+            if (ip.isEmpty()) {
+                clientError("IP address cannot be empty.");
+                return;
+            }
+
+            String portStr = portField.getText().trim();
+            if (!isInt(portStr)) {
+                clientError("Port must be an integer (e.g., 4554).");
+                return;
+            }
+
+            int port = Integer.parseInt(portStr);
             client.connect(ip, port);
 
             String response = client.readResponse();
@@ -190,33 +264,47 @@ public class ClientGUI extends JFrame {
             outputArea.append("Connected to server\n");
             outputArea.setCaretPosition(outputArea.getDocument().getLength());
 
+            connected = true;
+            setCommandButtonsEnabled(true);
+
         } catch (Exception e) {
+            connected = false;
+            setCommandButtonsEnabled(false);
+
             outputArea.append("ERROR: " + e.getMessage() + "\n");
             outputArea.setCaretPosition(outputArea.getDocument().getLength());
         }
     }
 
     private void disconnect() {
-    try {
-        String response = client.disconnect();
-        outputArea.append(response);
-        outputArea.append("Disconnected from server\n");
-        outputArea.setCaretPosition(outputArea.getDocument().getLength());
-    } catch (IOException e) {
-        outputArea.append("ERROR disconnecting\n");
-        outputArea.setCaretPosition(outputArea.getDocument().getLength());
+        try {
+            if (!connected) {
+                clientError("Not connected.");
+                return;
+            }
+
+            String response = client.disconnect(); // should send DISCONNECT, read reply, then close
+            outputArea.append(response);
+            outputArea.append("Disconnected from server\n");
+            outputArea.setCaretPosition(outputArea.getDocument().getLength());
+
+        } catch (IOException e) {
+            outputArea.append("ERROR disconnecting\n");
+            outputArea.setCaretPosition(outputArea.getDocument().getLength());
+        } finally {
+            connected = false;
+            setCommandButtonsEnabled(false);
+        }
     }
-}
-
-
 
     private void sendCommand() {
+        if (!requireConnected()) return;
+
         String cmd = commandField.getText().trim();
         if (!cmd.isEmpty()) {
             sendCommand(cmd);
         } else {
-            outputArea.append("ERROR: Raw Command is empty\n");
-            outputArea.setCaretPosition(outputArea.getDocument().getLength());
+            clientError("Raw Command is empty.");
         }
     }
 
@@ -224,14 +312,59 @@ public class ClientGUI extends JFrame {
         try {
             outputArea.append("> " + cmd + "\n");
             client.sendLine(cmd);
+
             String response = client.readResponse();
             if (response != null) outputArea.append(response);
+
             outputArea.setCaretPosition(outputArea.getDocument().getLength());
 
         } catch (Exception e) {
             outputArea.append("ERROR: " + e.getMessage() + "\n");
             outputArea.setCaretPosition(outputArea.getDocument().getLength());
+
+            connected = false;
+            setCommandButtonsEnabled(false);
         }
     }
+
+    // Validation helpers 
+
+    private boolean isInt(String s) {
+        if (s == null) return false;
+        s = s.trim();
+        if (s.isEmpty()) return false;
+        try {
+            Integer.parseInt(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private void clientError(String msg) {
+        outputArea.append("CLIENT ERROR: " + msg + "\n");
+        outputArea.setCaretPosition(outputArea.getDocument().getLength());
+    }
+
+    private boolean requireConnected() {
+        if (!connected) {
+            clientError("You must CONNECT before sending commands.");
+            return false;
+        }
+        return true;
+    }
+
+    private void setCommandButtonsEnabled(boolean enabled) {
+        postButton.setEnabled(enabled);
+        getButton.setEnabled(enabled);
+        pinButton.setEnabled(enabled);
+        unpinButton.setEnabled(enabled);
+        shakeButton.setEnabled(enabled);
+        clearButton.setEnabled(enabled);
+        sendButton.setEnabled(enabled); // raw command send disabled until connected too
+        disconnectButton.setEnabled(enabled);
+        connectButton.setEnabled(!enabled);
+    }
 }
+
 
