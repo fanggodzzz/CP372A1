@@ -11,6 +11,12 @@ public class ClientGUI extends JFrame {
     private JTextField portField;
     private JTextField commandField;
 
+    // Input
+    private JTextField xField;
+    private JTextField yField;
+    private JTextField colorField;
+    private JTextField messageField;
+
     private JButton connectButton;
     private JButton disconnectButton;
     private JButton sendButton;
@@ -33,15 +39,16 @@ public class ClientGUI extends JFrame {
         setTitle("CP372 A1 Client");
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout()); // make sure BorderLayout is used
+        setLayout(new BorderLayout());
 
         // Top panel
         JPanel topPanel = new JPanel();
-        topPanel.setLayout(new GridLayout(2, 1));
+        topPanel.setLayout(new GridLayout(3, 1));
 
+        // Connect panel
         JPanel connectPanel = new JPanel();
         connectPanel.add(new JLabel("Server IP:"));
-        ipField = new JTextField("127.0.0.1", 10);
+        ipField = new JTextField("10.0.0.193", 10);
         connectPanel.add(ipField);
 
         connectPanel.add(new JLabel("Port:"));
@@ -55,19 +62,42 @@ public class ClientGUI extends JFrame {
 
         topPanel.add(connectPanel);
 
+        // Raw command 
         JPanel commandPanel = new JPanel();
         commandPanel.setLayout(new BorderLayout());
         commandPanel.add(new JLabel("Raw Command:"), BorderLayout.WEST);
+
         commandField = new JTextField();
         commandPanel.add(commandField, BorderLayout.CENTER);
+
         sendButton = new JButton("Send Command");
         commandPanel.add(sendButton, BorderLayout.EAST);
 
         topPanel.add(commandPanel);
 
+        // Input panel
+        JPanel inputPanel = new JPanel();
+        inputPanel.add(new JLabel("X:"));
+        xField = new JTextField("10", 4);
+        inputPanel.add(xField);
+
+        inputPanel.add(new JLabel("Y:"));
+        yField = new JTextField("10", 4);
+        inputPanel.add(yField);
+
+        inputPanel.add(new JLabel("Color:"));
+        colorField = new JTextField("white", 7);
+        inputPanel.add(colorField);
+
+        inputPanel.add(new JLabel("Message:"));
+        messageField = new JTextField("Hello", 14);
+        inputPanel.add(messageField);
+
+        topPanel.add(inputPanel);
+
         add(topPanel, BorderLayout.NORTH);
 
-        // Output area (MAKE IT LARGE by putting it in CENTER)
+        // Output
         outputArea = new JTextArea();
         outputArea.setEditable(false);
         outputArea.setFont(new Font("Monospaced", Font.PLAIN, 13));
@@ -76,8 +106,8 @@ public class ClientGUI extends JFrame {
 
         JScrollPane scrollPane = new JScrollPane(outputArea);
         add(scrollPane, BorderLayout.CENTER);
-
-        // Buttons panel (move to SOUTH)
+        
+        // Buttons
         JPanel buttonPanel = new JPanel();
 
         postButton = new JButton("POST");
@@ -97,44 +127,79 @@ public class ClientGUI extends JFrame {
         add(buttonPanel, BorderLayout.SOUTH);
 
         // Button actions
+        
         connectButton.addActionListener(e -> connect());
         disconnectButton.addActionListener(e -> disconnect());
         sendButton.addActionListener(e -> sendCommand());
 
-        postButton.addActionListener(e -> sendCommand("POST 10 10 white Hello"));
+        // POST using input fields
+        postButton.addActionListener(e -> {
+            String x = xField.getText().trim();
+            String y = yField.getText().trim();
+            String color = colorField.getText().trim();
+            String msg = messageField.getText().trim();
+            sendCommand("POST " + x + " " + y + " " + color + " " + msg);
+        });
+
+        // GET 
         getButton.addActionListener(e -> sendCommand("GET"));
-        pinButton.addActionListener(e -> sendCommand("PIN 15 12"));
-        unpinButton.addActionListener(e -> sendCommand("UNPIN 15 12"));
+
+        // Dynamic PIN
+        pinButton.addActionListener(e -> {
+            String x = xField.getText().trim();
+            String y = yField.getText().trim();
+            sendCommand("PIN " + x + " " + y);
+        });
+
+        // Dynamic UNPIN
+        unpinButton.addActionListener(e -> {
+            String x = xField.getText().trim();
+            String y = yField.getText().trim();
+            sendCommand("UNPIN " + x + " " + y);
+        });
+
         shakeButton.addActionListener(e -> sendCommand("SHAKE"));
         clearButton.addActionListener(e -> sendCommand("CLEAR"));
     }
 
     private void connect() {
         try {
-            String ip = ipField.getText();
-            int port = Integer.parseInt(portField.getText());
+            String ip = ipField.getText().trim();
+            int port = Integer.parseInt(portField.getText().trim());
             client.connect(ip, port);
+
             String response = client.readResponse();
-            outputArea.append(response);
+            if (response != null) outputArea.append(response);
+
             outputArea.append("Connected to server\n");
+            outputArea.setCaretPosition(outputArea.getDocument().getLength());
 
         } catch (Exception e) {
             outputArea.append("ERROR: " + e.getMessage() + "\n");
+            outputArea.setCaretPosition(outputArea.getDocument().getLength());
         }
     }
 
     private void disconnect() {
-        try {
-            outputArea.append(client.disconnect());
-            outputArea.append("Disconnected\n");
-        } catch (IOException e) {
-            outputArea.append("ERROR disconnecting\n");
-        }
-    }
+    	try {
+        	client.disconnect();         
+        	outputArea.append("Disconnected\n"); 
+        	outputArea.setCaretPosition(outputArea.getDocument().getLength());
+    	} catch (IOException e) {
+        	outputArea.append("ERROR disconnecting\n");
+        	outputArea.setCaretPosition(outputArea.getDocument().getLength());
+    		}
+	}
+
 
     private void sendCommand() {
-        String cmd = commandField.getText();
-        sendCommand(cmd);
+        String cmd = commandField.getText().trim();
+        if (!cmd.isEmpty()) {
+            sendCommand(cmd);
+        } else {
+            outputArea.append("ERROR: Raw Command is empty\n");
+            outputArea.setCaretPosition(outputArea.getDocument().getLength());
+        }
     }
 
     private void sendCommand(String cmd) {
@@ -142,9 +207,7 @@ public class ClientGUI extends JFrame {
             outputArea.append("> " + cmd + "\n");
             client.sendLine(cmd);
             String response = client.readResponse();
-            outputArea.append(response);
-
-            // auto-scroll to bottom
+            if (response != null) outputArea.append(response);
             outputArea.setCaretPosition(outputArea.getDocument().getLength());
 
         } catch (Exception e) {
