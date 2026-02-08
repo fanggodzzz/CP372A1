@@ -36,37 +36,46 @@ public class ProtocolClient {
     }
     // Read response from the server
     public String readResponse() throws IOException {
-        String firstLine = in.readLine();
-        if (firstLine == null) {
-            throw new IOException("Server closed connection");
-        }
-        // If response starts with OK
-        if (firstLine.startsWith("OK ")) {
-            String rest = firstLine.substring(3);
-            // To read number after OK
+    String firstLine = in.readLine();
+    if (firstLine == null) {
+        throw new IOException("Server closed connection");
+    }
+
+    StringBuilder sb = new StringBuilder();
+    sb.append(firstLine).append("\n");
+
+    if (firstLine.startsWith("OK")) {
+        String[] parts = firstLine.trim().split("\\s+");
+        if (parts.length >= 2) {
+            String last = parts[parts.length - 1];
             try {
-                int count = Integer.parseInt(rest.trim());
-                String result = firstLine + "\n";
+                int count = Integer.parseInt(last);
                 for (int i = 0; i < count; i++) {
-                    result = result + in.readLine() + "\n";
+                    String line = in.readLine();
+                    if (line == null) break; 
+                    sb.append(line).append("\n");
                 }
-                return result;
-            } catch (NumberFormatException e) {
-                // OK but no number
-                return firstLine + "\n";
+            } catch (NumberFormatException ignored) {
             }
         }
-        // // ERROR response
-        return firstLine + "\n";
     }
+
+    return sb.toString();
+}
+
     // Disconnect
     public String disconnect() throws IOException {
+    if (!isConnected()) return "Already disconnected\n";
+
     out.println("DISCONNECT");
     out.flush();
 
     String response = in.readLine();
+    if (response == null) response = "Server closed connection";
 
-    socket.close();
+    try { in.close(); } catch (Exception ignored) {}
+    try { out.close(); } catch (Exception ignored) {}
+    try { socket.close(); } catch (Exception ignored) {}
 
     return response + "\n";
 }
