@@ -73,10 +73,10 @@ public class Board {
                 ansList.add(note);
             }
         }
-        ans = "OK " + ansList.size() + '\n';
+        ans = "OK " + ansList.size();
         for (Note note : ansList) {
-            ans += "NOTE " + note.getX() + ' ' + note.getY() + ' ' 
-                    + note.getColour() + ' ' + note.getMes() + ' ' + "PINNED=" + note.getPinned() + '\n';
+            ans += '\n' + "NOTE " + note.getX() + ' ' + note.getY() + ' ' 
+                    + note.getColour() + ' ' + note.getMes() + ' ' + "PINNED=" + note.getPinned() ;
         }
         return ans;
     }

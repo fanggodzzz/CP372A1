@@ -56,20 +56,22 @@ public class ProtocolClient {
                 return firstLine + "\n";
             }
         }
-        // ERROR response
+        // // ERROR response
         return firstLine + "\n";
     }
     // Disconnect
-    public void disconnect() throws IOException {
+    public String disconnect() throws IOException {
+        String response = "";
         if (isConnected()) {
             out.println("DISCONNECT");
             try {
-                readResponse();
+                response = readResponse();
             } catch (Exception e) {
                 // ignore
             }
             socket.close();
         }
+        return response;
     }
 }
 

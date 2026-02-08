@@ -114,9 +114,9 @@ public class ClientGUI extends JFrame {
             String ip = ipField.getText();
             int port = Integer.parseInt(portField.getText());
             client.connect(ip, port);
-            outputArea.append(">Connected to server\n");
             String response = client.readResponse();
             outputArea.append(response);
+            outputArea.append("Connected to server\n");
 
         } catch (Exception e) {
             outputArea.append("ERROR: " + e.getMessage() + "\n");
@@ -125,11 +125,8 @@ public class ClientGUI extends JFrame {
 
     private void disconnect() {
         try {
-            sendCommand("DISCONNECT");
-            String response = client.readResponse();
-            outputArea.append(response);
-            client.disconnect();
-            outputArea.append(">Disconnected\n");
+            outputArea.append(client.disconnect());
+            outputArea.append("Disconnected\n");
         } catch (IOException e) {
             outputArea.append("ERROR disconnecting\n");
         }
