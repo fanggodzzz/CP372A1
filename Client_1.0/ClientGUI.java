@@ -33,8 +33,9 @@ public class ClientGUI extends JFrame {
         setTitle("CP372 A1 Client");
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout()); // make sure BorderLayout is used
 
-        // Top panel 
+        // Top panel
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new GridLayout(2, 1));
 
@@ -66,7 +67,17 @@ public class ClientGUI extends JFrame {
 
         add(topPanel, BorderLayout.NORTH);
 
-        // Buttons panel
+        // Output area (MAKE IT LARGE by putting it in CENTER)
+        outputArea = new JTextArea();
+        outputArea.setEditable(false);
+        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        outputArea.setLineWrap(true);
+        outputArea.setWrapStyleWord(true);
+
+        JScrollPane scrollPane = new JScrollPane(outputArea);
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Buttons panel (move to SOUTH)
         JPanel buttonPanel = new JPanel();
 
         postButton = new JButton("POST");
@@ -83,14 +94,9 @@ public class ClientGUI extends JFrame {
         buttonPanel.add(shakeButton);
         buttonPanel.add(clearButton);
 
-        add(buttonPanel, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
 
-        // Output area
-        outputArea = new JTextArea();
-        outputArea.setEditable(false);
-        add(new JScrollPane(outputArea), BorderLayout.SOUTH);
-
-        // Button actions 
+        // Button actions
         connectButton.addActionListener(e -> connect());
         disconnectButton.addActionListener(e -> disconnect());
         sendButton.addActionListener(e -> sendCommand());
@@ -134,8 +140,14 @@ public class ClientGUI extends JFrame {
             client.sendLine(cmd);
             String response = client.readResponse();
             outputArea.append(response);
+
+            // auto-scroll to bottom
+            outputArea.setCaretPosition(outputArea.getDocument().getLength());
+
         } catch (Exception e) {
             outputArea.append("ERROR: " + e.getMessage() + "\n");
+            outputArea.setCaretPosition(outputArea.getDocument().getLength());
         }
     }
 }
+
