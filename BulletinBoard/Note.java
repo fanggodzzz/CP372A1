@@ -43,7 +43,7 @@ class Note {
     }
 
     public boolean contains(Pin pin, int nWid, int nHei) {
-        return x <= pin.getX() && x + nWid >= pin.getX() &&
-                    y <= pin.getY() && y + nHei >= pin.getY();
+        return x < pin.getX() && x + nWid > pin.getX() &&
+                    y < pin.getY() && y + nHei > pin.getY();
     }
 }
