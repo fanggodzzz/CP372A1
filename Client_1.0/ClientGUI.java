@@ -142,7 +142,23 @@ public class ClientGUI extends JFrame {
         });
 
         // GET 
-        getButton.addActionListener(e -> sendCommand("GET"));
+        getButton.addActionListener(e -> {
+    		StringBuilder cmd = new StringBuilder("GET");
+
+    		if (!colorField.getText().trim().isEmpty()) {
+        		cmd.append(" color=").append(colorField.getText().trim());
+    		}
+
+    		if (!xField.getText().trim().isEmpty() && !yField.getText().trim().isEmpty()) {
+        		cmd.append(" contains=").append(xField.getText().trim()).append(" ").append(yField.getText().trim());
+    		}
+
+    		if (!messageField.getText().trim().isEmpty()) {
+        		cmd.append(" refersTo=").append(messageField.getText().trim());
+    		}
+
+    	sendCommand(cmd.toString());
+		});
 
         // Dynamic PIN
         pinButton.addActionListener(e -> {
@@ -181,15 +197,17 @@ public class ClientGUI extends JFrame {
     }
 
     private void disconnect() {
-    	try {
-        	client.disconnect();         
-        	outputArea.append("Disconnected\n"); 
-        	outputArea.setCaretPosition(outputArea.getDocument().getLength());
-    	} catch (IOException e) {
-        	outputArea.append("ERROR disconnecting\n");
-        	outputArea.setCaretPosition(outputArea.getDocument().getLength());
-    		}
-	}
+    try {
+        String response = client.disconnect();
+        outputArea.append(response);
+        outputArea.append("Disconnected from server\n");
+        outputArea.setCaretPosition(outputArea.getDocument().getLength());
+    } catch (IOException e) {
+        outputArea.append("ERROR disconnecting\n");
+        outputArea.setCaretPosition(outputArea.getDocument().getLength());
+    }
+}
+
 
 
     private void sendCommand() {
@@ -216,3 +234,4 @@ public class ClientGUI extends JFrame {
         }
     }
 }
+
