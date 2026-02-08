@@ -61,17 +61,14 @@ public class ProtocolClient {
     }
     // Disconnect
     public String disconnect() throws IOException {
-        String response = "";
-        if (isConnected()) {
-            out.println("DISCONNECT");
-            try {
-                response = readResponse();
-            } catch (Exception e) {
-                // ignore
-            }
-            socket.close();
-        }
-        return response;
-    }
+    out.println("DISCONNECT");
+    out.flush();
+
+    String response = in.readLine();
+
+    socket.close();
+
+    return response + "\n";
 }
+
 
