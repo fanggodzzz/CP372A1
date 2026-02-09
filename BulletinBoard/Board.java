@@ -1,4 +1,5 @@
 package BulletinBoard;
+
 import java.util.*;
 
 public class Board {

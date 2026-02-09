@@ -182,7 +182,7 @@ public class ClientGUI extends JFrame {
 
     private void disconnect() {
     	try {
-        	client.disconnect();         
+        	outputArea.append(client.disconnect());         
         	outputArea.append("Disconnected\n"); 
         	outputArea.setCaretPosition(outputArea.getDocument().getLength());
     	} catch (IOException e) {
@@ -190,7 +190,6 @@ public class ClientGUI extends JFrame {
         	outputArea.setCaretPosition(outputArea.getDocument().getLength());
     		}
 	}
-
 
     private void sendCommand() {
         String cmd = commandField.getText().trim();

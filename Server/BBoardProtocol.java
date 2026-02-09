@@ -1,5 +1,4 @@
 package Server;
-
 import BulletinBoard.Board;
 
 public class BBoardProtocol {
