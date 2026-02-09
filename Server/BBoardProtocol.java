@@ -1,5 +1,5 @@
 package Server;
-import BulletinBoard.Board;
+import BulletinBoard.*;
 
 public class BBoardProtocol {
 
@@ -7,7 +7,7 @@ public class BBoardProtocol {
     // true: Starting to receive requests and response back
     private Board board;
     private boolean state = false; 
-    private final String FORMAT_ERROR = "ERROR INVALID_FORMAT";
+    private final String FORMAT_ERROR = "ERROR INVALID_FORMAT The";
     
     public BBoardProtocol(Board board) {
         this.board = board;
@@ -17,7 +17,12 @@ public class BBoardProtocol {
         String response = null;
 
         if (! state) {
-            response = "OK CONNECTION_ACCEPTED";
+            response = "OK CONNECTION_ACCEPTED ";
+            response += board.getBWid() + " " + board.getBHei() + ' ';
+            response += board.getNWid() + " " + board.getNHei() + ' ';
+            for (String colour: board.getColours()) {
+                response += colour + ' ';
+            }
             state = true;
         }
         else {

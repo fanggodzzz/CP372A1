@@ -14,7 +14,7 @@ public class Board {
         this.bHei = bHei;
         this.nWid = nWid;
         this.nHei = nHei;
-        this.colours = colours;
+        this.colours = colours.clone();
     }
 
     public String post(int x, int y, String colour, String message)  {
@@ -152,5 +152,25 @@ public class Board {
         pins.clear();
         return "OK CLEAR_COMPLETE";
     }
+    }
+
+    public int getBWid() {
+        return bWid;
+    }
+
+    public int getBHei() {
+        return bHei;
+    }
+
+    public int getNWid() {
+        return nWid;
+    }
+
+    public int getNHei() {
+        return nHei;
+    }
+
+    public String[] getColours() {
+        return colours.clone();
     }
 }
