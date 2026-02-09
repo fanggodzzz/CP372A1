@@ -418,6 +418,9 @@ public class ClientGUI extends JFrame {
                 return "Unknown command. Use POST, GET, PIN, UNPIN, SHAKE, CLEAR, DISCONNECT.";
         }
     }
+}
+    
+
 
 
 
