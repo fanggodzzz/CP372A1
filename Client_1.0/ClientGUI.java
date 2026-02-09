@@ -392,9 +392,6 @@ public class ClientGUI extends JFrame {
                 return null;
     
             case "GET":
-                // allow: GET
-                // allow: GET PINS
-                // allow: GET ... contains=x y ...
                 if (parts.length == 2 && parts[1].equalsIgnoreCase("PINS")) return null;
     
                 // validate contains= if present (needs both x and y ints)
@@ -421,5 +418,6 @@ public class ClientGUI extends JFrame {
                 return "Unknown command. Use POST, GET, PIN, UNPIN, SHAKE, CLEAR, DISCONNECT.";
         }
     }
+
 
 
