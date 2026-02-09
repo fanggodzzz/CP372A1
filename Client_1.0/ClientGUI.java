@@ -29,10 +29,7 @@ public class ClientGUI extends JFrame {
     private JButton clearButton;
 
     private JTextArea outputArea;
-
     private ProtocolClient client;
-
-    // Simple connection flag for client-side robustness
     private boolean connected = false;
 
     public ClientGUI() {
@@ -301,12 +298,20 @@ public class ClientGUI extends JFrame {
         if (!requireConnected()) return;
 
         String cmd = commandField.getText().trim();
-        if (!cmd.isEmpty()) {
-            sendCommand(cmd);
-        } else {
+        if (cmd.isEmpty()) {
             clientError("Raw Command is empty.");
-        }
+            return;
     }
+
+        String err = validateRawCommand(cmd);
+        if (err != null) {
+            clientError(err);
+            return;
+    }
+
+        sendCommand(cmd);
+}
+
 
     private void sendCommand(String cmd) {
         try {
@@ -366,5 +371,55 @@ public class ClientGUI extends JFrame {
         connectButton.setEnabled(!enabled);
     }
 }
+    private String validateRawCommand(String cmd) {
+        String[] parts = cmd.trim().split("\\s+");
+        if (parts.length == 0) return "Raw Command is empty.";
+    
+        String op = parts[0].toUpperCase();
+    
+        switch (op) {
+            case "POST":
+                // POST x y color message...
+                if (parts.length < 5) return "POST format: POST <x> <y> <color> <message>";
+                if (!isInt(parts[1]) || !isInt(parts[2])) return "POST: x and y must be integers.";
+                if (parts[3].trim().isEmpty()) return "POST: color cannot be empty.";
+                return null;
+    
+            case "PIN":
+            case "UNPIN":
+                if (parts.length != 3) return op + " format: " + op + " <x> <y>";
+                if (!isInt(parts[1]) || !isInt(parts[2])) return op + ": x and y must be integers.";
+                return null;
+    
+            case "GET":
+                // allow: GET
+                // allow: GET PINS
+                // allow: GET ... contains=x y ...
+                if (parts.length == 2 && parts[1].equalsIgnoreCase("PINS")) return null;
+    
+                // validate contains= if present (needs both x and y ints)
+                for (int i = 1; i < parts.length; i++) {
+                    String t = parts[i].toLowerCase();
+                    if (t.startsWith("contains=")) {
+                        String xStr = parts[i].substring("contains=".length()).trim();
+                        if (xStr.isEmpty()) return "GET: contains= requires X and Y (e.g., contains=10 10).";
+                        if (i + 1 >= parts.length) return "GET: contains= requires BOTH X and Y.";
+                        String yStr = parts[i + 1];
+                        if (yStr.contains("=")) return "GET: contains= requires BOTH X and Y.";
+                        if (!isInt(xStr) || !isInt(yStr)) return "GET: contains= requires integer X and Y.";
+                    }
+                }
+                return null;
+    
+            case "SHAKE":
+            case "CLEAR":
+            case "DISCONNECT":
+                if (parts.length != 1) return op + " takes no parameters.";
+                return null;
+    
+            default:
+                return "Unknown command. Use POST, GET, PIN, UNPIN, SHAKE, CLEAR, DISCONNECT.";
+        }
+    }
 
 
