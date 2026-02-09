@@ -9,6 +9,7 @@ public class BBoardProtocol {
     private boolean state = false; 
     private final String FORMAT_ERROR = "ERROR INVALID_FORMAT The";
     
+    
     public BBoardProtocol(Board board) {
         this.board = board;
     }

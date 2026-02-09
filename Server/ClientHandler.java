@@ -8,6 +8,7 @@ public class ClientHandler implements Runnable {
     private final Socket socket;
     private final Board board;
     private final int clientNum;
+    private static final int MAX_LINE_LENGTH = 1024;
 
     public ClientHandler(Socket socket, Board board, int clientNum) {
         this.socket = socket;
@@ -35,6 +36,14 @@ public class ClientHandler implements Runnable {
             // Step 4: Read client input and respond until conversation ends
             String clientInput;
             while ((clientInput = in.readLine()) != null) {
+                String line = in.readLine();
+
+                // DoS avoid
+                if (line == null || line.length() > MAX_LINE_LENGTH) {
+                    out.println("ERROR MESSAGE_TOO_LARGE");
+                    return;
+                }
+
                 System.out.println("Client " + clientNum + ": " + clientInput);
                 
                 serverResponse = protocol.processInput(clientInput.trim());
