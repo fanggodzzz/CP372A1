@@ -7,7 +7,7 @@ public class BBoardProtocol {
     // true: Starting to receive requests and response back
     private Board board;
     private boolean state = false; 
-    private final String FORMAT_ERROR = "ERROR INVALID_FORMAT The";
+    private final String FORMAT_ERROR = "ERROR INVALID_FORMAT";
     
     
     public BBoardProtocol(Board board) {
