@@ -370,7 +370,7 @@ public class ClientGUI extends JFrame {
         disconnectButton.setEnabled(enabled);
         connectButton.setEnabled(!enabled);
     }
-}
+
     private String validateRawCommand(String cmd) {
         String[] parts = cmd.trim().split("\\s+");
         if (parts.length == 0) return "Raw Command is empty.";
@@ -418,6 +418,7 @@ public class ClientGUI extends JFrame {
                 return "Unknown command. Use POST, GET, PIN, UNPIN, SHAKE, CLEAR, DISCONNECT.";
         }
     }
+
 
 
 
