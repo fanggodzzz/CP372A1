@@ -366,7 +366,7 @@ public class ClientGUI extends JFrame {
         unpinButton.setEnabled(enabled);
         shakeButton.setEnabled(enabled);
         clearButton.setEnabled(enabled);
-        sendButton.setEnabled(enabled); // raw command send disabled until connected too
+        sendButton.setEnabled(enabled); 
         disconnectButton.setEnabled(enabled);
         connectButton.setEnabled(!enabled);
     }
@@ -394,7 +394,7 @@ public class ClientGUI extends JFrame {
             case "GET":
                 if (parts.length == 2 && parts[1].equalsIgnoreCase("PINS")) return null;
     
-                // validate contains= if present (needs both x and y ints)
+                // validate contains=if present needs both x and y ints
                 for (int i = 1; i < parts.length; i++) {
                     String t = parts[i].toLowerCase();
                     if (t.startsWith("contains=")) {
@@ -418,6 +418,7 @@ public class ClientGUI extends JFrame {
                 return "Unknown command. Use POST, GET, PIN, UNPIN, SHAKE, CLEAR, DISCONNECT.";
         }
     }
+
 
 
 
